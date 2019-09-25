@@ -3,14 +3,14 @@ import
     Browser(browse: Browse)
 define
    \insert 'SemanticStack.oz'
-   \insert 'SingleAssignmentStore.oz'
+   %\insert 'SingleAssignmentStore.oz'
    %\insert 'Unify.oz'
    
    Current = {NewCell nil}
 
    fun {Ident X Env}
         case X
-        of ident(X1) then {Adjoin Env env({AddKeyToSAS})}
+        of ident(X1) then {Adjoin Env env(X)}   %env({AddKeyToSAS})}
         else raise declarationError(X) end
         end
     end
@@ -38,10 +38,10 @@ define
 		       
 		    [] X|Xr then
 		       if Xr \= nil then
- 			  {Push sepair(statement:Xr env:@Current.env)}
+ 			        {Push sepair(statement:Xr env:@Current.env)}
 		       else skip end
-		       {Push sepair(statement:X env:@Current.env)}
-		       {Execute}
+		        {Push sepair(statement:X env:@Current.env)}
+		        {Execute}
 		    end
                 else
                     {Browse 'Complete'}
@@ -54,10 +54,11 @@ define
    % {Interpret [[nop] [nop] [nop]]}
    
    % Problem 2
-   {Interpret [var ident(x) [var ident(y) [var ident(z) [nop]]]]}
+%   {Interpret [var ident(x) [var ident(y) [var ident(z) [nop]]]]}
+%   {Interpret [ [var ident(x) [nop]] [var ident(y) [nop]] [var ident(z) [nop]] ]}
 
    % Problem 3
-   % {Interpret [localvar ident(x) [localvar ident(y) [bind ident(x) ident(y)]]]}
+   % {Interpret [var ident(x) [var ident(y) [bind ident(x) ident(y)]]]}
 
 
 
