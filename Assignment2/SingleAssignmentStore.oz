@@ -11,6 +11,7 @@ end
 fun {RetrieveFromSAS Key}
   {Dictionary.get SingleAssignmentStore Key ?} 
 end
+
 proc{AuxRecordAssign VarList H Val CurrentList}
    for Item in VarList do
       %{Browse assignitem2#Item.2}
@@ -18,12 +19,12 @@ proc{AuxRecordAssign VarList H Val CurrentList}
       of equivalence(New)|nil then 
 	 if New == H then
 	       %Item.2.1 = Val %{ValueToBeAssigned Val}}
-	    CurrentList := {Append @CurrentList [Item.1 Val]}
+	    CurrentList := {Append @CurrentList [[Item.1 Val]]}
 	 else
-	    CurrentList := {Append @CurrentList Item}
+	    CurrentList := {Append @CurrentList [Item]}
 	 end
       [] literal(New)|nil then
-	 CurrentList := {Append @CurrentList Item}
+	 CurrentList := {Append @CurrentList [Item]}
       [] record | L | Pairs then
 	 local NewList in
 	    %{Browse Pairs}
@@ -63,7 +64,11 @@ proc {BindValueToKeyInSAS Key Val}
 	      end
 	     }
       end
-   else {Exception.'raise' alreadyAssigned(Key Val {Dictionary.get SingleAssignmentStore Key ?})}
+   else 
+      if Val == {Dictionary.get SingleAssignmentStore Key} then skip
+      else
+	 {Exception.'raise' alreadyAssigned(Key Val {Dictionary.get SingleAssignmentStore Key ?})}
+      end
    end
 end
 
@@ -85,25 +90,29 @@ proc {BindRefToKeyInSAS Key RefKey}
 		}
 	 end
       else
-	 if Val == {Dictionary.get SingleAssignmentStore RefKey} then skip
-	 else
+	 {Browse {Dictionary.get SingleAssignmentStore RefKey}}
+	 {Browse {Dictionary.get SingleAssignmentStore Key}}
+	 if Val \= {Dictionary.get SingleAssignmentStore RefKey} then
 	    {Exception.'raise' alreadyAssigned2( equivalence(Key) {Dictionary.get SingleAssignmentStore RefKey ?})}
+	 else
+	    skip
 	 end
       end
    end
 end
 
-
-{Browse {AddKeyToSAS}}
-{Browse {AddKeyToSAS}}
-{Browse {AddKeyToSAS}}
-{Browse {Dictionary.entries SingleAssignmentStore}}
+%{Browse {AddKeyToSAS}}
+%{Browse {AddKeyToSAS}}
+%{Browse {AddKeyToSAS}}
+%{Browse SingleAssignmentStore.2}
+%{Browse {Dictionary.entries SingleAssignmentStore}.2}
 %{BindRefToKeyInSAS 1 3}
 %{Browse {Dictionary.entries SingleAssignmentStore}}
 %{Browse {RetrieveFromSAS 1}}
-%{BindValueToKeyInSAS 2 [record literal(a) [[literal(f1) ident(x1)] [literal(f2) ident(x2)]]]}
-%{BindValueToKeyInSAS 1 [record literal(a) [[literal(f1) ident(x1)] [literal(f2) ident(x2)]]]}
+%{BindValueToKeyInSAS 2 [record literal(a) [[literal(feature1) literal(c)] [literal(feature2) literal(b)] [literal(feature3) literal(c)]]]   }
+%{BindValueToKeyInSAS 1 [record literal(a) [[literal(feature1) literal(c)] [literal(feature2) literal(b)] [literal(feature3) literal(c)]]]  }
+%{BindValueToKeyInSAS 3 [record literal(a) [[literal(feature1) literal(c)] [literal(feature2) literal(b)] [literal(feature3) literal(c)]]]  }
 %{BindValueToKeyInSAS 1 10}
 %{BindValueToKeyInSAS 1 10}
 %{BindRefToKeyInSAS 1 2}
-{Browse {Dictionary.entries SingleAssignmentStore}}
+%{Browse {Dictionary.entries SingleAssignmentStore}}

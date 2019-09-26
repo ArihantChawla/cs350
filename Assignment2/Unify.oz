@@ -1,140 +1,119 @@
-%% Unify two expressions.
-%% See KLInterpreter for the language used here ("Loz").
-%%
-%% An expression can be one of:
-%%
-%% 1. An integer, boolean or atom literal -- literal(42),
-%%    literal(t)/literal(f) or literal(foo).
-%%
-%% 2. A record -- [record label [[feature expression]
-%%                               [feature expression] ...]]
-%%
-%% 3. An identifier -- in this case we look at the encosing
-%%    environment and the SAS.
+%==============
+% Code for unification
+%
+% Unify two expressions. An expression can be
+% 1. A literal
+% 2. A record
+% 3. An identifier
+%
+% Please refer to the problem statement for the syntax of the
+% language.
+%
+% Author: Satyadev Nandakumar
+% Date  : Fri Sep 28 18:32:54 2012
+% Modified from the code of Siddharth Agarwal
+%==============
 
-\insert 'SingleAssignmentStore.oz'
+%\insert 'SingleAssignmentStore.oz'
+\insert 'ProcessRecords.oz'
 
 declare
-
-%% Replaces every identifier with its key in the SAS store, or with
-%% its value, as needed. Remember that the SAS should never know about
-%% identifiers, only about other keys.
-fun {SubstituteIdentifiers Expression Environment}
-  case Expression
-  of Head|Tail then
-    %% It's a list, so recurse
-    {SubstituteIdentifiers Head Environment} |
-    {SubstituteIdentifiers Tail Environment}
-  [] ident(X) then
-    {RetrieveFromSAS Environment.X}
-  else
-    Expression
-  end
-end
-
-%% As a first pass, we substitute SAS values for identifiers.
-proc {Unify Expression1 Expression2 Environment}
-  Expression1S = {SubstituteIdentifiers Expression1 Environment}
-  Expression2S = {SubstituteIdentifiers Expression2 Environment}
+proc {Unify Exp1 Exp2 Env}
+   SubstituteIdentifiers
+   WeakSubstitute
+   UnifyRecursive
 in
-  {UnifySubstituted Expression1S Expression2S nil}
-end
+   %==================
+   % Replace every identifier in the code with
+   % (1) its key in the SAS store if it is unbound (or)
+   % (2) with its value if it is bound [determined]
+   % Code by Siddharth Agarwal
+   %=================
+   fun {SubstituteIdentifiers Exp Env}
+      case Exp
+      of H|T then  
+	 {SubstituteIdentifiers H Env}|{SubstituteIdentifiers T Env}
+      [] ident(X) then
+	 %local Z in
+	 %   Z = Env.X
+	 %   case Z
+	 %      of equivalence(K)
+	 %      {RetrieveFromSAS K}
+	 %   end
+	 % end
+	 {RetrieveFromSAS Env.X}
+      else Exp end
+   end
 
-%% To make things easier, we guarantee here that if Expression2 is an
-%% identifier, then so is Expression1.
-proc {UnifySubstituted Expression1 Expression2 UnificationsDone}
-  %% A very very simple way to do this is to check if Expression2 is
-  %% an identifier. If it is, then reverse the order, otherwise
-  %% don't. This is obviously going to work in all cases.
-  case Expression2
-  of equivalence(_) then
-    {UnifyInternal Expression2 Expression1 UnificationsDone}
-  else
-    {UnifyInternal Expression1 Expression2 UnificationsDone}
-  end
-end
-
-proc {UnifyInternal Expression1 Expression2 UnificationsDone}
-  %% Check if we've already performed this particular unification
-  if {List.member [Expression1 Expression2] UnificationsDone} orelse
-    {List.member [Expression2 Expression1] UnificationsDone} then
-    skip
-  else
-    UnificationsDoneNow = {List.append UnificationsDone [[Expression1 Expression2]]}
-  in
-    %% First check if Expression1 is an identifier
-    case Expression1
-    of equivalence(EqKey1) then
-      %% Expression1 is unbound. Don't think, just bind.
-      case Expression2
-      of equivalence(Y) then
-        {BindRefToKeyInSAS EqKey1 Y}
+   %=================
+   % Used when unifying records. Similar to SubstituteIdentifiers,
+   % except that lists are not unified.
+   %=================
+   fun {WeakSubstitute X}
+      case X
+      of equivalence(A) then {RetrieveFromSAS A}
+      else X end
+   end
+   
+   %=================
+   % Main unification procedure.
+   % Assumes that identifiers have been substituted away, by calling
+   % SubstituteIdentifiers.
+   %==================
+   proc {UnifyRecursive Exp1 Exp2 UnificationsSoFar}
+      Unifications % New list of unifications
+   in
+      %==================
+      % Ensure that we do not go into an infinite loop
+      % unifying already unified expressions.
+      % Code modified from Siddharth Agarwal's code
+      %==================
+      if {List.member [Exp1 Exp2] UnificationsSoFar}
+      then skip
       else
-        {BindValueToKeyInSAS EqKey1 Expression2}
-      end
-    [] literal(X) then
-      %% We *know* from Unify that Expression2 is not an identifier. It
-      %% is either a literal or a record.
-      case Expression2
-      of literal(!X) then
-        %% !X means that the value of X will be matched. This is fine,
-        %% as 2 = 2 is a valid Oz kernel statement.
-        skip
-      else
-        {Raise incompatibleTypes(Expression1 Expression2)}
-      end
-    [] record|Record1Label|Record1FeaturePairs then
-      %% Again, Expression2 is not an identifier. It has to be a literal
-      %% or a record.
-      case Expression2
-      of record|Record2Label|Record2FeaturePairs then
-        %% The record labels have to be the same, and so do the feature
-        %% pairs.
-        if Record1Label == Record2Label andthen {IsAritySame Record1FeaturePairs
-                                                 Record2FeaturePairs} then
-          %% Unify all the values within
-          {List.zip Record1FeaturePairs Record2FeaturePairs
-           fun {$ FeaturePair1 FeaturePair2}
-             %% In case we've added a few things to the SAS in between...
-             Val1 = FeaturePair1.2.1
-             Val2 = FeaturePair2.2.1
-             RealVal1 RealVal2
-           in
-             case Val1 of equivalence(X) then
-               RealVal1 = {RetrieveFromSAS X}
-             else
-               RealVal1 = Val1
-             end
+	 Unifications = {List.append [Exp1 Exp2] UnificationsSoFar}
+	 case Exp1
+	 of equivalence(X) then
+	    case Exp2
+	    of equivalence(Y) then {BindRefToKeyInSAS X Y}
+	    else {BindValueToKeyInSAS X Exp2} end
+	 [] literal(X) then
+	    case Exp2
+	    of equivalence(_) then
+	       {UnifyRecursive Exp2 Exp1 Unifications}
+	    [] literal(!X) then skip
+	    else raise incompatibleTypes(Exp1 Exp2) end
+	    end
+	 [] record | L | Pairs1 then % not label(L)
+	    case Exp2
+	    of equivalence(_) then
+	       {UnifyRecursive Exp2 Exp1 Unifications}
+	    [] record|!L|Pairs2 then % recursively unify
+	       Canon1 = {Canonize Pairs1.1}
+	       Canon2 = {Canonize Pairs2.1}
+	    in
+	       {List.zip Canon1 Canon2
+		fun {$ X Y}
+		   {UnifyRecursive
+		    {WeakSubstitute X.2.1} {WeakSubstitute Y.2.1}
+		    Unifications}
+		   unit
+		end
+		_}
+	    else raise incompatibleTypes(Exp1 Exp2) end
+	    end %
+	 else
+	    raise incompatibleTypes(Exp1 Exp2) end
+	 end
+      end % if
+   end % UnifyRecursive
 
-             case Val2 of equivalence(X) then
-               RealVal2 = {RetrieveFromSAS X}
-             else
-               RealVal2 = Val2
-             end
-
-             {UnifySubstituted RealVal1 RealVal2 UnificationsDoneNow}
-             unit
-           end _}
-        else
-          {Raise incompatibleTypes(Expression1 Expression2)}
-        end
-      else
-        {Raise incompatibleTypes(Expression1 Expression2)}
-      end
-    end
-  end
+   %========= Start Unification ======
+   {UnifyRecursive {SubstituteIdentifiers Exp1 Env}
+   {SubstituteIdentifiers Exp2 Env} nil}
 end
 
-%% Checks whether the elements of two lists are the same
-fun {IsEquivalentList List1 List2}
-  {List.all List1 fun {$ X} {List.member X List2} end} andthen
-  {List.all List2 fun {$ X} {List.member X List1} end}
-end
 
-%% Checks whether the arities are the same
-fun {IsAritySame FeaturePairs1 FeaturePairs2}
-  FeatureList1 = {List.map FeaturePairs1 fun {$ Pair} Pair.1 end}
-  FeatureList2 = {List.map FeaturePairs2 fun {$ Pair} Pair.1 end}
-in
-  {IsEquivalentList FeatureList1 FeatureList2}
-end
+
+
+

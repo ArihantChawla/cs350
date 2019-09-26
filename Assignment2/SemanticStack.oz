@@ -1,3 +1,4 @@
+declare
 SemanticStack = {NewCell nil}
 
 proc {Push SEPair}
