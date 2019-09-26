@@ -31,8 +31,12 @@ in
    %=================
    fun {SubstituteIdentifiers Exp Env}
       case Exp
-      of H|T then  
-	 {SubstituteIdentifiers H Env}|{SubstituteIdentifiers T Env}
+      of H|T then
+	 if H == 'proc' then
+	    Exp
+	 else
+	    {SubstituteIdentifiers H Env}|{SubstituteIdentifiers T Env}
+	 end
       [] ident(X) then
 	 %local Z in
 	 %   Z = Env.X
@@ -92,12 +96,18 @@ in
 	       Canon1 = {Canonize Pairs1.1}
 	       Canon2 = {Canonize Pairs2.1}
 	    in
+%	       {Browse Canon1.1.1}
+%	       {Browse Canon2.1.1}
 	       {List.zip Canon1 Canon2
 		fun {$ X Y}
-		   {UnifyRecursive
-		    {WeakSubstitute X.2.1} {WeakSubstitute Y.2.1}
-		    Unifications}
-		   unit
+		   if X.1 \= Y.1 then
+		      raise incompatibleTypes(Exp1 Exp2) end
+		   else				
+		      {UnifyRecursive
+		       {WeakSubstitute X.2.1} {WeakSubstitute Y.2.1}
+		       Unifications}
+		      unit
+		   end
 		end
 		_}
 	    else raise incompatibleTypes(Exp1 Exp2) end
