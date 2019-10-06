@@ -1,5 +1,5 @@
 declare SingleAssignmentStore CurrIndex
-FreeVars = {NewCell nil}
+FreeVars = {NewCell env()}
 Idents = {Dictionary.new}
 proc {RemoveIdents Xs}
    local Ys in
@@ -133,7 +133,7 @@ proc {BindValueToKeyInSAS Key Val}
 		       case Val
 		       of ['proc' L S] then
 			  {DealWithProcs Val @Current.env}
-			  {Dictionary.put SingleAssignmentStore Y.1 Val#[@FreeVars] }
+			  {Dictionary.put SingleAssignmentStore Y.1 Val#@FreeVars }
 		       else
 			  {Dictionary.put SingleAssignmentStore Y.1 Val}
 		       end
