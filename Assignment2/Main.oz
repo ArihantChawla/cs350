@@ -6,6 +6,14 @@ Current = {NewCell nil}
 
 
 
+fun {FindinSAS Value}
+       local X in
+       X = {List.filter {Dictionary.entries SingleAssignmentStore} fun {$ Y}   Y.2 == Value end}
+       X.1.1
+      end
+     
+end
+
 fun {AddToEnv X Env}
    case X
    of ident(X1) then
@@ -63,14 +71,19 @@ proc {Interpret AST}
 	       end
 
 
-	    [] [match ident(Z) P1 S1 S2] then
+            [] [match ident(Z) P1 S1 S2] then
 	       
 	       
 	       local P in P =  {RetrieveFromSAS @Current.env.Z}
 		        case P
                         of  record | L | Pairs1 then 
 	                case P1
-	                of record|!L|Pairs2 then
+			of record|!L|Pairs2 then
+                                if 
+				 {List.length Pairs1.1} \=  {List.length Pairs2.1} then {Push sepair(statement:S2 env:@Current.env)} {Execute}
+
+			   else
+			      
 	                Canon1 = {Canonize Pairs2.1}
 	                Canon2 = {Canonize Pairs1.1}
 		        Aux in 
@@ -88,14 +101,12 @@ proc {Interpret AST}
 				   case A
 				     
 				   of ident(B) then
-
-%%%%%%%%%%%%%%%we have to find the value of field that is literal 100 and then search in SAS that which variable is literal 100
-%%%thus map B to that variable in environment ----- test ki jagah yeh karna hai '''
 				      
-				      local D in D =  sepair(statement:@Current.statement env:{Adjoin @Current.env env(B:'test')})
+				      local D in D =  sepair(statement:@Current.statement env:{Adjoin @Current.env env(B:{FindinSAS H2.2.1})})
 					 
 					 Current := D
-					 end
+				      end
+				      
 				      {Unify A H2.2.1 @Current.env}
 				   [] literal(C) then
 				       
@@ -110,13 +121,13 @@ proc {Interpret AST}
 		    end    %case
 		 end %proc   
 	        	 {Aux Canon1 Canon2}
-	                 {Push sepair(statement:S1 env:@Current.env)} {Execute}
+			   {Push sepair(statement:S1 env:@Current.env)} {Execute}
+			   end %main else end
 			else     {Push sepair(statement:S2 env:@Current.env)} {Execute}	
 			end
 			else     {Push sepair(statement:S2 env:@Current.env)} {Execute}	
 			end
-                end
-                
+                end    
 
 	    [] apply|ident(X)|Tail then
 	       {Browse {RetrieveFromSAS @Current.env.X}}
@@ -219,8 +230,8 @@ end
                          ]
                     ]
                  ]}
-*/
 
+*/
 
 % Problem 3
 
@@ -237,14 +248,14 @@ end
 */
 
     % Problem 4a
-   /* 
-     {Interpret  [var ident(x)
+    
+    /* {Interpret  [var ident(x)
                      [bind ident(x) [record literal(a) [literal(f1) ident(x)]]]
                  ]}
                 
    */
-     /*
-     {Interpret  [var ident(x)
+     
+ /*    {Interpret  [var ident(x)
                      [var ident(y)
                          [
                              [bind ident(x) [record literal(a) [[literal(f1) ident(y)]]]]
@@ -253,9 +264,10 @@ end
 			 ]
                      ]
                  ]}
-      */     
-
-   /*   
+           
+*/
+/*
+      
 {Interpret [[var ident(x) [var ident(y)
 			   [bind
 			    
@@ -264,8 +276,8 @@ end
 			    [record literal(a)[[literal(feature1) ident(x)] [literal(feature) ident(x)] [literal(feature3) literal(c)]]]
 
 					      ]]]]
-}*/
-
+}
+*/
       
 /*
 {Interpret [[var ident(x) [var ident(y)
@@ -276,15 +288,14 @@ end
 			    [record literal(a)[[literal(feature1) ident(x)] [literal(feature2) literal(b)] [literal(feature3) literal(c)]]]
 
 					      ]]]]
-} 
-*/
+} */
+
     
     % Problem 5a
-     /*{Interpret  [var ident(x)
+    /* {Interpret  [var ident(x)
                      [bind ident(x) literal(100)]
                  ]}
      */
-
 %Problem 4b and 5b
 /*{Interpret [
 	     var ident(x)
@@ -328,9 +339,9 @@ end
 	     ]]
 	    ]
 }
-
 */
 /*
+
 {Interpret [
 	    var ident(x)
 	    [[ var ident(y)
@@ -360,7 +371,7 @@ end
 
 }
 */
-
+%%%%%%%%%%%%%%%%%problrm 9%%%%%%%%%%%%%%%%%%
 /*
 {Interpret [
 	    var ident(x)
@@ -375,6 +386,23 @@ end
 	     ]]
 	   ]
 }
+
+*/
+/*
+{Interpret [
+	    var ident(x)
+	    [[ var ident(y)
+	       [[ var ident(z)
+		  [
+		   [bind ident(x) literal(2)]
+		   [bind ident(y) literal(5)]
+		   [sum ident(x) ident(y) ident(z)]
+		  ]
+		]]
+	     ]]
+	   ]
+}
+
 */
 
 %%%%problem 6 
@@ -392,7 +420,7 @@ end
 
 */
 
-/*   {Interpret  [var ident(x)
+ /*  {Interpret  [var ident(x)
                    [ [var ident(y)
                          [ [bind ident(x) literal('false')]
                              [conditional ident(x)
@@ -403,13 +431,13 @@ end
                      ]
                 ] ]}
 
-
 */
+
 
 %%%%%%%problem 7
 
-/*
 
+/*
 {Interpret  [var ident(x)
 	     [[var ident(y)
                         [[var ident(z)
@@ -425,87 +453,113 @@ end
                  }
 
 
+*/
+
+
+/*
+{Interpret  [var ident(x)
+	     [[var ident(y)
+                        [[var ident(z)
+                             [   
+                                 [bind ident(x) [record literal(a) [[literal(f1) ident(y)] [literal(f2) ident(y)]]]]
+                                 [match ident(x) [record literal(a) [[literal(f1) ident(w)]]]
+                                    [ [bind ident(z) literal(42)]]
+                                    [ [bind ident(z) literal(0)]]]
+                                 ]
+                            ]
+		      ]]]
+                   ]
+                 }
+
+
+*/
+/*
+{Interpret  [var ident(x)
+	     [[var ident(y)
+                        [[var ident(z)
+                             [   
+                                 [bind ident(x) [record literal(a) [[literal(f1) ident(y)] [literal(f2) ident(z)]]]]
+                                 [match ident(x) [record literal(a) [[literal(f1) ident(w)][literal(f2) ident(r)]]]
+                                    [ [bind ident(z) literal(42)]]
+                                    [ [bind ident(z) literal(0)]]]
+                                 ]
+                            ]
+		      ]]]
+                   ]
+                 }
 
 */
 
-    % {Interpret  [localvar ident(x)
-    %                 [localvar ident(y)
-    %                     [localvar ident(z)
-    %                         [
-    %                             [bind ident(x) [record literal(a) [[literal(f1) literal(100)]]]]
-    %                             [match ident(x) [record literal(b) [[literal(f1) ident(y)]]]
-    %                                 [bind ident(z) literal(42)]
-    %                                 [bind ident(z) literal(0)]
-    %                             ]
-    %                         ]
-    %                     ]
-    %                 ]
-    %             ]}
+  /*   {Interpret  [var ident(x)
+                     [var ident(y)
+                         [var ident(z)
+                             [
+                                 [bind ident(x) [record literal(a) [[literal(f1) literal(100)]]]]
+                                 [match ident(x) [record literal(b) [[literal(f1) ident(y)]]]
+                                     [bind ident(z) literal(42)]
+                                     [bind ident(z) literal(0)]
+                                 ]
+                             ]
+                         ]
+                    ]
+                 ]}
 
-    % {Interpret  [localvar ident(x)
-    %                 [localvar ident(y)
-    %                     [localvar ident(z)
-    %                         [
-    %                             [bind ident(x) [record literal(a) [
-    %                                 [literal(f1) literal(100)]
-    %                                 [literal(f2) [record literal(b) [
-    %                                     [literal(f3) literal(42)]
-    %                                 ]]]
-    %                             ]]]
-    %                             [match ident(x) [record literal(b) [[literal(f1) ident(y)]]]
-    %                                 [bind ident(z) literal(42)]
-    %                                 [bind ident(z) literal(0)]
-    %                             ]
-    %                         ]
-    %                     ]
-    %                 ]
-    %             ]}
+*/
+ /*    {Interpret  [var ident(x)
+                     [[var ident(y)
+                         [[var ident(z)
+                             [
+                                 [bind ident(x) [record literal(a) [
+                                     [literal(f1) ident(y)]
+                                     [literal(f2) [record literal(b) [
+                                         [literal(f3) ident(z)]
+                                     ]]]
+                                 ]]]
+                                 [match ident(x) [record literal(b) [[literal(f1) ident(y)]]]
+                                     [bind ident(z) literal(42)]
+                                     [bind ident(z) literal(0)]
+                                 ]
+                             ]
+			  ]
+			 ]
+		       ]
+                     ]
+                 ]}
+*/
+ /*    {Interpret  [var ident(x)
+                     [[var ident(y)
+                         [[var ident(z)
+                             [
+                                 [bind ident(y)  [record literal(b) [
+                                         [literal(f3) literal(100)] ]]]
+                                 [bind ident(x) [record literal(a) [
+                                     [literal(f1) ident(y)]]]]
+     
+                                 [match ident(x) [record literal(a) [
+                                                    [literal(f1) ident(m)]]
+                                                 ] 
+                                     [bind ident(z) literal(42)]
+                                     [bind ident(z) literal(0)]]
+                                 ]
+                             ]
+                         ]
+                     ]]]
+       }
+*/
+ /*    {Interpret  [var ident(x) 
+                     [ 
+                      [var ident(x)  [[nop]]]
+			
+                         [bind ident(x) literal(100)]
+                          ]
+			 
+		    ]
+                    
+                 }
 
-    % {Interpret  [localvar ident(x)
-    %                 [localvar ident(y)
-    %                     [localvar ident(z)
-    %                         [
-    %                             [bind ident(y) literal(80)]
-    %                             [bind ident(x) [record literal(a) [
-    %                                 [literal(f1) ident(y)]
-    %                                 [literal(f2) [record literal(b) [
-    %                                     [literal(f3) ident(y)]
-    %                                 ]]]
-    %                             ]]]
-    %                             [match ident(x) [record literal(a) [
-    %                                                 [literal(f1) ident(m)]
-    %                                                 [literal(f2) ident(n)]
-    %                                             ]] % y will bind to record corresponding to literal(b)
-    %                                 [bind ident(z) literal(42)]
-    %                                 [bind ident(z) literal(0)]
-    %                             ]
-    %                         ]
-    %                     ]
-    %                 ]
-    %             ]}
-    % {Interpret  [localvar ident(x)
-    %                 [localvar ident(y)
-    %                     [localvar ident(z)
-    %                         [localvar ident(u)
-    %                             [
-    %                                 [bind ident(y) literal(80)]
-    %                                 [bind ident(u) literal(100)]
-    %                                 [bind ident(x) [record literal(a) [
-    %                                     [literal(f1) ident(y)]
-    %                                     [literal(f2) [record literal(b) [
-    %                                         [literal(f3) ident(y)]
-    %                                     ]]]
-    %                                 ]]]
-    %                                 [match ident(x) [record literal(a) [
-    %                                                     [literal(f1) ident(u)] % new local u created.
-    %                                                     [literal(f2) ident(n)]
-    %                                                 ]] % y will bind to record corresponding to literal(b)
-    %                                     [bind ident(z) literal(42)]
-    %                                     [bind ident(z) literal(0)]
-    %                                 ]
-    %                             ]
-    %                         ]
-    %                     ]
-    %                 ]
-    %             ]}
 
+*/
+
+
+
+    
