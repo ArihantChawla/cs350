@@ -1,12 +1,11 @@
 declare
 Current = {NewCell nil}
 SemanticStack = {NewCell nil}
-\insert 'MST.oz'
 \insert 'SemanticStack.oz'
 \insert 'SingleAssignmentStore.oz'
 \insert 'Unify.oz'
 
-
+\insert 'MST.oz'
 
 
 fun {AddToEnv X Env}
@@ -28,13 +27,21 @@ proc {Interpret AST}
 	 {Browse @Current#{Dictionary.entries SingleAssignmentStore}}
 
 	 if @Current \= nil then
+	    
 	    case @Current.statement
-	    of nil then {Browse 'Complete'}
+	    of nil then
+	       if @MST == nil then
+		  {Browse 'Complete'}
+	       else
+		  {Browse 'thread completed'}
+		  {SimpleScheduler}
+		  {Execute}
+	       end
 
 	    [] [nop] then {Execute}
 
 	    [] [var X S] then
-	       %{Browse S}
+	       {Browse S}
 	       {Push sepair(statement:S env:{AddToEnv X @Current.env})}
 	       {Execute}
 	       
@@ -189,9 +196,7 @@ proc {Interpret AST}
 
 	    [] ['thread' S 'end'] then
 	       %{Browse 'CurrBefore'}
-	       %{Browse @Current}
-	    
-	       
+	       %{Browse @Current}	       
 	       local
 		  TempStack = sepair(statement:S env:@Current.env)
 	       in
@@ -202,9 +207,10 @@ proc {Interpret AST}
 		  {AddToMST [sepair(statement:@Current.statement env:TempStack.env)]}
 	          %{AddInMST TempStack}
 		  %{AddInMST @Current}
-		  {Browse 'MST'}
-		  {Browse @MST}
+%		  {Browse 'MST'}
+%		  {Browse @MST}
 	       end
+	       {Browse 'thread completed'}
 	       {SimpleScheduler}
 	       {Execute}
 
@@ -217,7 +223,13 @@ proc {Interpret AST}
 	       {Execute}
 	    end
 	 else
-	    {Browse 'Complete'}
+	    %{Browse @MST}
+	    if @MST == nil then
+	       {Browse 'Complete'}
+	    else
+	       {SimpleScheduler}
+	       {Execute}
+	    end
 	 end
       end
       {Execute}
@@ -563,7 +575,7 @@ end
                      ]]]
        }
 */
- /*    {Interpret  [var ident(x) 
+/*    {Interpret  [var ident(x) 
                      [ 
                       [var ident(x)  [[nop]]]
 			
@@ -574,12 +586,12 @@ end
                     
                  }
 
-
 */
+
 
 {Interpret [
 	    [var ident(x)
-			  ['thread' [bind ident(x) literal(100)] 'end']
+			 [['thread' [bind ident(x) literal(100)] 'end']]
 	    ]
 	    
 	    [var ident(y) [bind ident(y) literal(200)]]
