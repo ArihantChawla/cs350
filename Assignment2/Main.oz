@@ -38,7 +38,7 @@ proc {Interpret AST}
 	    [] [nop] then {Execute}
 
 	    [] [var X S] then
-	       {Browse S}
+	      % {Browse S}
 	       {Push sepair(statement:S env:{AddToEnv X @Current.env})}
 	       {Execute}
 	       
@@ -191,7 +191,16 @@ proc {Interpret AST}
 		{BindValueToKeyInSAS @Current.env.z literal(Sum)}
 	       end
 	       {Execute}
-		  
+
+	    [] [sq ident(x) ident(y)] then       % y = x*x
+	       local
+		  X = {RetrieveFromSAS @Current.env.x}.1
+		  Sq = X*X
+	       in
+		  {BindValueToKeyInSAS @Current.env.y literal(Sq)}
+	       end
+	       {Execute}
+	       
 	    [] X|Xr then
 	       if Xr \= nil then
 		  {Push sepair(statement:Xr env:@Current.env)}
@@ -206,6 +215,242 @@ proc {Interpret AST}
       {Execute}
    end
 end
+
+{Interpret
+ [
+  var ident(x)
+  [[ var ident(y)
+     [[ var ident(z)
+	[[var ident(a)
+	  [[ var ident(b)
+	     [
+	      [bind ident(x) literal(10)]
+	      [sq ident(x) ident(y)]
+	      [bind ident(z) literal(20)]
+	      [[sq ident(z) ident(a)]]
+	      [sum ident(a) ident(y) ident(b)]
+	     ]
+	   ]]
+	 ]]
+      ]]
+   ]]
+  ]
+}
+
+
+/*{Interpret
+ [
+  var ident(x)
+  [[ var ident(y)
+     [[ var ident(z)
+       [[ var ident(a)
+	 [[ var ident(b)
+	   [
+	    [bind ident(x) literal(1)]
+	    [sq ident(x) ident(a)]
+	    %[bind ident(y) literal(2)]
+	    %[sq ident(y) ident(b)]
+	    %[sum ident(a) ident(b) ident(z)]
+	   ]
+	  ]]
+	]]
+      ]]
+   ]]
+ ]
+}
+
+*/
+
+
+
+
+/*
+{Interpret [
+	    var ident(x)
+	    [[ var ident(z1)
+	       [[var ident(z2)
+		 [[var ident(z3)
+		   [
+		    [ bind ident(x)
+		      ['proc'
+		       [idents(y1) idents(y2) ident(y3)]
+		       [var ident(z)
+			[
+			 [bind ident(y1) literal(20)]
+			 [bind ident(y2) ident(y3)]
+			 [bind ident(y3) literal(30)]
+			 [bind ident(z) ident(y3)]
+			]]]
+		    ]
+		    [apply ident(x) ident(z1) ident(z2) ident(z3)]
+		    ]]]]]]]]
+}
+*/
+
+
+
+
+
+
+
+
+
+/*{Interpret  [var ident(x)
+	     [[var ident(y)
+	       [
+		[bind ident(y) literal(20)]
+		 [bind ident(x)
+		 [record literal(rec)
+		  [
+		   [literal(a) literal(100)]
+		   [literal(b) literal(200)]
+		  ]
+		 ]
+		]
+		[match ident(x)
+		 [record literal(rec)
+		  [
+		   [literal(a) ident(w)]
+		   [literal(b) ident(z)]
+		  ]
+		 ]
+		 [[bind ident(y) literal(100)]]
+		 [[bind ident(y) literal(20)]]]
+	       ]]]]
+                 }
+*/
+/*{Interpret
+ [var ident(x)
+  [[var ident(y)
+    [[bind ident(y) literal(20)]
+     [bind ident(x) [record literal(rec) [[literal(a) literal(100)]
+		                          [literal(b) literal(200)]]]]
+
+     [match ident(x) [record literal(rec)
+		      [[literal(a) ident(u)]
+		       [literal(b) ident(v)]]]
+      
+      [[bind ident(y) literal(100)]]
+
+     [[bind ident(y) literal(20)]]]]]]]
+                                 
+                    
+                 }
+
+*/
+
+
+
+
+
+
+
+
+
+
+/*{Interpret
+ [var ident(x) [
+		[var ident(y) [
+			    
+			       [conditional ident(x)
+				[ [bind ident(y) literal(1)]]
+				[ [bind ident(y) literal(2)]]
+                             
+
+			       ]
+                     ]
+	       ] ]]
+}*/
+
+
+
+
+
+
+
+/*{Browse "c=200"}
+{Interpret
+ [var ident(x) [
+		 [var ident(y) [
+				[var ident(x) [
+					       [bind ident(x) literal(200)]
+					       [bind ident(y) literal(200)]
+					      ]
+				]
+				[bind ident(y) literal(200)]
+			       ]
+		 ]
+	       ]
+ ]
+}
+
+{Browse "c=20"}
+
+{Interpret
+ [var ident(x) [
+		 [var ident(y) [
+				[var ident(x) [
+					       [bind ident(x) literal(200)]
+					       [bind ident(y) literal(200)]
+					      ]
+				]
+				[bind ident(y) literal(20)]
+			       ]
+		 ]
+	       ]
+ ]
+}
+
+				
+*/				
+						
+
+
+/*
+{Interpret
+ [var ident(x1) [
+		 [var ident(x2) [
+				 [var ident(x3) [ 
+						 [var ident(x) [
+								[bind ident(x) [
+										[record literal(rec) [
+												      [literal(a) ident(x1)]
+												      [literal(b) ident(x2)]
+												      [literal(c) ident(x3)]
+												     ]
+										]
+									       ]
+								]
+							       ]
+						 ]
+						]
+				 ]
+				]
+		 ]
+		 ]]
+		 
+	     }*/
+
+
+/*{Interpret [var ident(x)
+	    [ [var ident(y)
+	     [  [var ident(x)
+		[bind ident(x) ident(y)]
+	       ] 
+	     [bind ident(x) ident(y)]
+	       ]]]]
+ }
+{Interpret [var ident(x)
+	    [var ident(y)
+	     [var ident(x)
+	      [var ident(x)
+	       [[nop] [nop]
+	       ]
+	      ]
+	     ]
+	    ]
+	   ]
+}*/
 
 
 %---------Problem 1----------%
@@ -340,8 +585,8 @@ end
 	    ]
 }
 */
-/*
 
+/*
 {Interpret [
 	    var ident(x)
 	    [[ var ident(y)
