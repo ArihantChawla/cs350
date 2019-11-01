@@ -48,15 +48,9 @@ proc {Interpret AST}
 		  {RRScheduler} {Execute} 
 		  
 	       [] [bind X Y] then
-	       %{Browse 'test'}
-		  {Unify X Y @Current.env}
-	       %{Browse 'test'}
-	       %{Browse @Current.env}
-	       %{Browse SingleAssignmentStore.1}
-	       %{Browse SingleAssignmentStore.2}
+		  {Unify X Y @Current.env} 
 		  local A in
 		     A = {Pop}
-		  %{Browse A}
 		     if A \= nil then
 			{Push sepair(statement:A.statement env:{Adjoin A.env @Current.env })}
 		     else
