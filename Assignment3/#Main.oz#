@@ -49,7 +49,7 @@ proc {Interpret AST}
 		  
 	       [] [bind X Y] then
 	       %{Browse 'test'}
-		  {Unify X Y @Current.env}
+		  {Unify X Y @Current.env} 
 	       %{Browse 'test'}
 	       %{Browse @Current.env}
 	       %{Browse SingleAssignmentStore.1}

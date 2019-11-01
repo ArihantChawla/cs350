@@ -407,7 +407,7 @@ end
 
 %%%%problem 6 
 
-/*    {Interpret  [var ident(x)
+ /*  {Interpret  [var ident(x)
                    [ [var ident(y)
                          [ [bind ident(x) literal('true')]
                              [conditional ident(x)
@@ -417,6 +417,7 @@ end
                          ]
                      ]
                 ] ]}
+
 
 */
 
