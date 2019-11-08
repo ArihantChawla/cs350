@@ -1,0 +1,8 @@
+HW3_GROUP PART SUBMISSION
+
+QUESTIONS ATTEMPTED: 2.1 AND 2.1
+SUBMITTED BY : 1) Maneet Kaur (160383)
+               2) Arihant Chawla (EXY19006)
+
+Date: 1 Nov 2019
+Time: 10:15 PM

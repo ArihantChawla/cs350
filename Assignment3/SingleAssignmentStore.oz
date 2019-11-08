@@ -61,7 +61,7 @@ proc{IntersectWithGlobal Env}
 	      Map Xs
 	      fun {$ X}
 		 if {Value.hasFeature Env X} then
-		    FreeVars := {Adjoin @FreeVars env(X:Env.X)}
+		    FreeVars := {Adj @FreeVars env(X:Env.X)}
 		    X
 		 else
 		    X%{Browse uDECLAREDVARIABLEUSED}

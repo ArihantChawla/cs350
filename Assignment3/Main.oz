@@ -4,22 +4,42 @@ SemanticStack = {NewCell nil}
 CurrentSteps = {NewCell 0}
 TimeSlice = 1
 
+fun {Adj R1 R2}
+   case R1
+   of nil then
+      case R2
+      of nil then nil
+      else R2
+      end
+   else
+      case R2
+      of nil then R1
+      else {Adjoin R1 R2}
+      end
+   end
+end
+
+
 \insert 'SemanticStack.oz'
 \insert 'SingleAssignmentStore.oz'
 \insert 'Unify.oz'
 \insert 'MST.oz'
+
 
 fun {AddToEnv X Env}
    case X
    of ident(X1) then
       local Y in
 	 Y = {AddKeyToSAS} 
-	    {Adjoin Env env(X1:Y)}
+	    {Adj Env env(X1:Y)}
 	 
       end
    else raise declarationError(X) end
       end
 end
+
+
+      
 
 proc {Interpret AST}
       {Push sepair(statement:AST env:nil)}
@@ -52,7 +72,7 @@ proc {Interpret AST}
 		  local A in
 		     A = {Pop}
 		     if A \= nil then
-			{Push sepair(statement:A.statement env:{Adjoin A.env @Current.env })}
+			{Push sepair(statement:A.statement env:{Adj A.env @Current.env })}
 		     else
 			{Push sepair(statement:nil env:@Current.env)}
 		     end	       
@@ -61,11 +81,23 @@ proc {Interpret AST}
 		  
 		  
 	       [] conditional|ident(X)| S1|S2|nil then
-		  
 		  case {RetrieveFromSAS @Current.env.X}
 		  of  literal('true') then {Push sepair(statement:S1 env: @Current.env)} {RRScheduler} {Execute} 
 		  []  literal('false') then {Push sepair(statement:S2 env: @Current.env)} {RRScheduler} {Execute} 	  
-		  else {Browse 'Error Condition'}
+		  else
+		
+		     local Temp in
+			
+			if @SemanticStack \= nil then
+			   Temp = {Pop}
+			   {AddToMST [sepair(statement:Temp.statement env:{Adj @Current.env Temp.env})]}
+			end
+			{AddToMST [sepair(statement:@Current.statement env:@Current.env )]}
+			
+		
+		     end
+		     %{Browse @MST}
+		     {SuspendThread} {Execute}
 		  end
 		  
 		  
@@ -100,7 +132,7 @@ proc {Interpret AST}
 				     
 					     of ident(B) then
 				      
-						local D in D =  sepair(statement:@Current.statement env:{Adjoin @Current.env env(B:{FindinSAS H2.2.1})})
+						local D in D =  sepair(statement:@Current.statement env:{Adj @Current.env env(B:{FindinSAS H2.2.1})})
 						   
 						   Current := D
 						end
@@ -145,27 +177,48 @@ proc {Interpret AST}
 				  {Map L fun {$ X} X.1 end }
 				  {Map Tail fun {$ X} X.1 end }
 				  fun {$ A B} env(A:@Current.env.B) end}
-				 Adjoin
+				 Adj
 				 env()
 			     }}
 			
 			{Push sepair(statement:S env:
-						 {Adjoin
+						 {Adj
 						  CE
 						  {FoldR
 						   {List.zip
 						    {Map L fun {$ X} X.1 end }
 						    {Map Tail fun {$ X} X.1 end }
 						    fun {$ A B} env(A:@Current.env.B) end}
-						   Adjoin
+						   Adj
 						   env()
 						  }
 						 }
 				    )
 			}
-		  end
+		     end
 		  else
-		     {Browse 'ERROR - NOT A PROC'}
+		     %{Browse 'ERROR - NOT A PROC'}
+
+
+		     local Temp in
+			
+			if @SemanticStack \= nil then
+			   Temp = {Pop}
+
+			   
+			   {AddToMST [sepair(statement:Temp.statement env:{Adj @Current.env Temp.env})]}
+			   
+			end
+			{AddToMST [sepair(statement:@Current.statement env:@Current.env )]}
+			
+		
+		     end
+		     %{Browse @MST}
+		     {SuspendThread} {Execute}
+
+
+
+		     
 	       end
 		  {RRScheduler} {Execute} 
 		  
@@ -199,12 +252,13 @@ proc {Interpret AST}
 		  %{Browse 'TS'}
 		     {AddToMST [TempStack]}
 		     Current := {Pop}
-		  %{Browse 'CurrAfter'}
-		     {AddToMST [sepair(statement:@Current.statement env:{Adjoin @Current.env TempStack.env})]}
+		     if @Current \= nil then
+			{AddToMST [sepair(statement:@Current.statement env:{Adj @Current.env TempStack.env})]}
+		     end
 	          %{AddInMST TempStack}
 		  %{AddInMST @Current}
-%		  {Browse 'MST'}
-%		  {Browse @MST}
+%		  
+%		  
 		  end
 		  {SimpleScheduler}
 		  {Execute} 
@@ -219,7 +273,8 @@ proc {Interpret AST}
 	       end
 	 else
 	    %{Browse @MST}
-	       if @MST == nil then
+	    if @MST == nil then
+	       
 		  {Browse 'Complete'}
 	    else
 		  {SimpleScheduler}
@@ -231,6 +286,58 @@ proc {Interpret AST}
       end
    end
    
+
+{Interpret
+ [var ident(s1)
+  [[ var ident(s2)
+     [[ var ident(a)
+	[
+	 [bind ident(a) literal(10)]
+	 ['thread'
+	  [
+	   [var ident(b)
+	    [[var ident(t)[
+	      [bind ident(t) literal(1)]
+	      [bind ident(b)  ident(a)]
+	      [conditional ident(s1)
+	       [nop]
+	       [[nop][nop]]
+	      ]]
+	     ]]
+	   ]
+	  ]
+	  'end'
+	 ]
+	 ['thread'
+	  [
+	   [var ident(c)
+	    [[var ident(u)[
+	      [bind ident(u) literal(2)]
+	      [bind ident(c) ident(a)]
+	      [conditional ident(s2)
+	       [nop]
+	       [[nop][nop]]
+	      ]
+			   [bind ident(s1) literal('true')]
+			  ]]]]]
+	  'end'
+	 ]
+	 [var ident(a) [
+			[bind ident(a) literal(100)]
+			['thread'  [
+				    [var ident(d)
+				     [[var ident(v)[
+						    [bind ident(v) literal(3)]
+						    [bind ident(d) ident(a)]
+						    [bind ident(s2) literal('false')]
+						   ]]]]]
+			 'end'
+			]]
+	 ]]
+      ]]]]]
+}
+
+
 
 %---------Problem 1----------%
 
@@ -614,7 +721,20 @@ proc {Interpret AST}
 	   ] 
 }
 
-   */ 
+*/
+/*
+
+{Interpret  [var ident(x)
+                     [var ident(y)
+                         [var ident(z)
+                             [
+                                 ['thread' [bind ident(z) literal(100)] 'end']
+                                 ['thread' [bind ident(y) literal(200)] 'end']
+			      ['thread' [bind ident(x) literal(300)] 'end']
+			      ]]]]}
+							     
+
+		*/				
 /*
 {Interpret  [var ident(x)
                      [var ident(y)
@@ -622,42 +742,45 @@ proc {Interpret AST}
                              [
                                  ['thread' [bind ident(z) literal(100)] 'end']
                                  ['thread' [apply ident(x) ident(z)] 'end']
-                                 ['thread' [[bind ident(x)  ['proc' [ident(p1)]
-                                                     [
-                                                         [nop]
+                                 ['thread' [bind ident(x)  ['proc' [ident(p1)]
+                                                     
+                                                  
                                                          [var ident(u)
                                                              [bind ident(u) ident(p1)]
                                                          ]
-                                                         [var ident(v)
-                                                             [bind ident(v) ident(z)]
-							 ]
-						      
-						     ]
-							     
-
-							    ]
-					    ]
-					    ] 'end'
-					     ]
-
-			      
-			     ]
-			  
-			 ]
-		
-		     ]	     
-
-	    ]
-}
-
+						     ]] 'end']
+			      ]]]]}
+				
 */
-
-
+/*
 {Interpret  [
 	     ['thread' [var ident(z) [bind ident(z) literal(100)]] 'end']
 	     ['thread' [var ident(y) [bind ident(y) literal(200)]] 'end']
 	     ['thread' [var ident(x) [bind ident(x) literal(300)]] 'end']
 	    ]
 }
+
+*/
+
+/*
+{Interpret  [var ident(x)
+                   [ var ident(y)
+                         [var ident(z)
+                             [   ['thread' [[conditional ident(z)
+                                              [ [bind ident(y) literal(42)]]
+                                              [ [bind ident(y) literal(0)]]
+                                           ]]
+                                   'end']
+                                 ['thread' [bind ident(z) literal('true')] 'end']  
+			      
+			     ]
+			  
+			 ]
+		
+		     ]
+            ]	     
+
+}
+*/
 
 

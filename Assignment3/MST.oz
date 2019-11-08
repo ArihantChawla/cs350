@@ -7,9 +7,13 @@ end
 
 proc {SimpleScheduler}
    local
-      Temp = @MST.1.1
+      Temp = @MST.1.1 
    in
-      {Push sepair(statement:Temp.statement env:{Adjoin @Current.env Temp.env})}
+	if @Current == nil then 
+		{Push sepair(statement:Temp.statement env:Temp.env)}
+	else
+      		{Push sepair(statement:Temp.statement env:{Adj @Current.env Temp.env})}
+	end
    end
    MST := {List.drop @MST 1}  
 end
@@ -21,8 +25,9 @@ end
 proc {SuspendThread}
    local Temp in
       Temp = {Pop}
-      {AddToMST [sepair(statement:Temp.statement env:{Adjoin @Current.env Temp.env})]}
-      {Browse "Thread Suspended"}
+      if Temp \= nil then 
+      {AddToMST [sepair(statement:Temp.statement env:{Adj @Current.env Temp.env})]} end
+      {Browse 'Thread Suspended'}
       {SimpleScheduler}
    end
 end
